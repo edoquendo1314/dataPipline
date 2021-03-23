@@ -1,8 +1,11 @@
 from airflow.models import DAG
 from airflow.providers.postgres.operators.postgres import PostgresOperator
 from airflow.providers.http.sensors.http import HttpSensor
+from airflow.providers.http.operators.http import SimpleHttpOperator
+
 
 from datetime import datetime
+import json
 
 default_args = {
     'start_date': datetime(2021,3,22)
@@ -33,5 +36,14 @@ with DAG(
         task_id='is_api_available',
         http_conn_id='user_api',
         endpoint='api/'
+    )
+
+    extracting_user = SimpleHttpOperator(
+        task_id='extracting_user',
+        http_conn_id='user_api',
+        endpoint='api/',
+        method='GET',
+        response_filter=lambda response: json.loads(response.text),
+        log_response=True
     )
 
