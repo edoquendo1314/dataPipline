@@ -17,7 +17,7 @@ with DAG(
     default_args = default_args, 
     catchup=False
     ) as dag:
-        creating_table = PostgresOperator(
+        creating_table=PostgresOperator(
             task_id='creating_table',
             postgres_conn_id='postgres_default',
             sql='''
@@ -30,20 +30,20 @@ with DAG(
                     email       TEXT NOT NULL PRIMARY KEY
                 );
                 '''
-    )
+        )
 
-    is_api_avaible = HttpSensor(
-        task_id='is_api_available',
-        http_conn_id='user_api',
-        endpoint='api/'
-    )
+        is_api_available=HttpSensor(
+            task_id='is_api_available',
+            http_conn_id='user_api',
+            endpoint='api/'
+        )
 
-    extracting_user = SimpleHttpOperator(
-        task_id='extracting_user',
-        http_conn_id='user_api',
-        endpoint='api/',
-        method='GET',
-        response_filter=lambda response: json.loads(response.text),
-        log_response=True
-    )
+        extracting_user=SimpleHttpOperator(
+            task_id='extracting_user',
+            http_conn_id='user_api',
+            endpoint='api/',
+            method='GET',
+            response_filter=lambda response: json.loads(response.text),
+            log_response=True
+        )
 
