@@ -15,11 +15,11 @@ with DAG(
     dag_id = 'postgres_operator_dag',
     schedule_interval = '@daily', 
     default_args = default_args, 
-    catchup=False
+    catchup=False,
     ) as dag:
         creating_table=PostgresOperator(
             task_id='creating_table',
-            postgres_conn_id='postgres_default',
+            postgres_conn_id='postgres_default_2',
             sql='''
                 CREATE TABLE IF NOT EXISTS users(
                     firstname   TEXT NOT NULL,
@@ -29,7 +29,7 @@ with DAG(
                     password    TEXT NOT NULL,
                     email       TEXT NOT NULL PRIMARY KEY
                 );
-                '''
+                ''',
         )
 
         is_api_available=HttpSensor(
