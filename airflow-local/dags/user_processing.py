@@ -18,20 +18,21 @@ def _processing_user(ti):
     if not len(users) or 'results' not in users[0]:
         raise ValueError('User is empty')
     user = users[0]['results'][0]
-    processed_user = json_normalize({
+    processed_user = {
         'firstname': user['name']['first'],
         'lastname': user['name']['last'],
         'country': user['location']['country'],
         'username': user['login']['username'],
         'password': user['login']['password'],
-        'email': user['email'],   
-    })
-    processed_user.to_csv('/tmp/processed_user.csv', index=None, header=False)
+        'email': user['email']
+    }
+    value_list = ["'" + x + "'" for x in processed_user.values()]
+    return ",".join(value_list);
 
 
 with DAG(
     dag_id = 'postgres_operator_dag',
-    schedule_interval = '@daily', 
+    schedule_interval = '@hourly', 
     default_args = default_args, 
     catchup=False,
     ) as dag:
@@ -49,6 +50,13 @@ with DAG(
                 );
                 ''',
         )
+
+        storing_user = PostgresOperator(
+          task_id="storing_user",
+          postgres_conn_id="postgres_default_2",
+          sql="INSERT INTO users (firstname, lastname, country, username, password, email) VALUES ({{ task_instance.xcom_pull(task_ids='processing_user') }})"
+
+          )
 
         is_api_available=HttpSensor(
             task_id='is_api_available',
@@ -68,11 +76,6 @@ with DAG(
         processing_user = PythonOperator(
             task_id='processing_user',
             python_callable=_processing_user
-        )
-
-        storing_user = BashOperator(
-            task_id='storing_user',
-            bash_command='echo -e ".separator","\n.import /tmp/processed_user.cvs users" | postgres /var/lib/postgresql/data'
         )
 
         creating_table >> is_api_available >> extracting_user >> processing_user >> storing_user
